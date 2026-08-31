@@ -23,6 +23,31 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Skylark Drones Backend is running' });
 });
 
+// TEMPORARY diagnostic endpoint - remove after fixing column ID mapping.
+// Returns raw column_values (with real Monday.com column ids) for one sample
+// item from each board, so we can fix data-normalizer.ts's field lookups.
+app.get('/api/debug/columns', async (req, res) => {
+  try {
+    const mondayClient = new MondayClient(
+      process.env.MONDAY_API_KEY,
+      process.env.WORK_ORDERS_BOARD_ID,
+      process.env.DEALS_BOARD_ID
+    );
+    const [workOrders, deals] = await Promise.all([
+      mondayClient.getWorkOrders(),
+      mondayClient.getDeals(),
+    ]);
+    res.json({
+      workOrderSample: workOrders[0] || null,
+      dealSample: deals[0] || null,
+      workOrderCount: workOrders.length,
+      dealCount: deals.length,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
+
 // Main query endpoint
 app.post('/api/query', async (req, res) => {
   try {
