@@ -250,7 +250,13 @@ Always:
 - Ask clarifying questions if the query is ambiguous
 - Give actionable insights, not just raw numbers`;
 
+    const GROQ_MODEL = 'llama-3.3-70b-versatile';
+
     const messages: any[] = [
+      {
+        role: 'system',
+        content: systemPrompt,
+      },
       {
         role: 'user',
         content: userQuery,
@@ -259,12 +265,11 @@ Always:
 
     // First API call to determine intent and required tools
     let response = await groq.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
+      model: GROQ_MODEL,
       messages,
       tools: this.getTools(),
       tool_choice: 'auto',
       max_tokens: 2048,
-      system: systemPrompt,
     });
 
     let assistantMessage = '';
@@ -296,12 +301,11 @@ Always:
 
       // Call API again with tool results
       response = await groq.chat.completions.create({
-        model: 'mixtral-8x7b-32768',
+        model: GROQ_MODEL,
         messages,
         tools: this.getTools(),
         tool_choice: 'auto',
         max_tokens: 2048,
-        system: systemPrompt,
       });
     }
 
