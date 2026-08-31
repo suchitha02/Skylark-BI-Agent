@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { AgentResponse } from '@/lib/types';
 import { BrandIcon, ChatIcon, SparkleIcon, WarningIcon, InfoIcon, SendIcon, LinkIcon } from './icons';
+import Markdown from './Markdown';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -155,13 +156,17 @@ export default function ChatInterface() {
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-2xl ${
+                    className={`${msg.role === 'user' ? 'max-w-2xl' : 'max-w-3xl w-full'} ${
                       msg.role === 'user'
                         ? 'bg-sand-200 text-ink-900 rounded-3xl rounded-tr-md'
                         : 'bg-ink-800 text-sand-100 rounded-3xl rounded-tl-md border border-ink-700'
                     } px-5 py-4`}
                   >
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    {msg.role === 'assistant' ? (
+                      <Markdown>{msg.content}</Markdown>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    )}
 
                     {/* Response details for assistant messages */}
                     {msg.response && msg.role === 'assistant' && (
