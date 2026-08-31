@@ -6,6 +6,16 @@
 
 An AI agent that answers founder-level questions (pipeline, operations, sectors, customers, and estimated revenue) by querying two Monday.com boards (Work Orders, Deals) live via the GraphQL API, normalizing the messy real-world data, computing metrics deterministically in code, and using a Groq-hosted LLM with function calling to interpret the question, call the right metric tool(s), and explain the result. Deployed as a separate Express/Node backend (Render) and Next.js chat frontend (Vercel).
 
+## Beyond the core requirements
+
+A few additions on top of the assignment's ask, aimed at making the tool feel like a product rather than a script:
+
+- **Inline charts.** Answers that touch pipeline, revenue, operations, sectors, customers, or a leadership update carry up to 2 `ChartSeries` (bar/pie) computed by `agent.ts` from the *same* `Analytics` call that produced the text, not parsed back out of the LLM's prose — a chart can never disagree with the number stated next to it. Rendered client-side with Recharts.
+- **Context-aware follow-up questions.** After each answer, the agent proposes 2-3 next questions drawn from a curated per-tool pool (`SkylarkAgent.FOLLOW_UP_POOL`), keyed off whichever tool actually answered that turn — clicking one re-submits it, so a session can flow founder → pipeline → risks → leadership update without retyping.
+- **Export/share on every answer.** Copy to clipboard, download as Markdown, or open a print view (browser "Save as PDF") — all client-side, no extra backend endpoint.
+- **Typing animation.** Assistant answers reveal progressively rather than popping in whole, with charts/insights/follow-ups fading in only once the text finishes. This is a frontend reveal of an already-complete response, not token-level streaming from Groq — chosen deliberately over real SSE/chunked streaming for reliability across the Render↔Vercel hop (proxy buffering on a free-tier host is a common way "streaming" silently stops working after deploy).
+- **Markdown rendering + a from-scratch SVG icon set.** Agent answers (bold, headers, tables, `<br>` inside cells) render as actual formatted output (`react-markdown` + `remark-gfm` + `rehype-raw`/`rehype-sanitize`) instead of literal markdown syntax; every icon in the UI is a hand-drawn stroke SVG, no emoji, no icon-font dependency.
+
 ## Key assumptions
 
 - **Column mapping by title, not id.** Monday.com auto-generates opaque, per-board column ids (e.g. `color_mm6r8ekx`). These are not stable across boards or re-imports, so every field lookup matches on the human-readable column **title** (fetched via `boards.columns { id title }`), substring-matched against a keyword list per field (e.g. `customer` → `['customer', 'company', 'client', 'account']`). This was the fix for the "0 valid records" bug.
@@ -32,7 +42,8 @@ Read literally, the optional requirement is under-specified (no cadence, format,
 1. **Server-side conversation sessions** (a session id + short-lived store) instead of the client re-sending history on every call — more robust and cheaper on tokens as conversations grow.
 2. **Caching the Monday.com fetch** (5-minute TTL) — every query currently re-fetches both boards in full.
 3. **A real evaluation set** of question → expected-metric pairs, run against the deployed agent after every change, instead of manual spot-checking.
-4. **Dashboards/visualizations** as a companion to the chat interface for at-a-glance metrics.
+4. **Real token-level streaming** from Groq over SSE/chunked HTTP, once the deployment target's proxy behavior is confirmed to pass it through reliably — today's typing animation reveals an already-complete response rather than live tokens.
 5. **Actual revenue data** — if Skylark tracks realized revenue anywhere (even outside Monday.com), wiring that in would remove the biggest asterisk in the whole system.
+6. **Click-through charts** — clicking a bar/sector in a chart could re-query the agent scoped to that sector, instead of only the fixed follow-up-question chips.
 
 *Last updated: August 31, 2026.*

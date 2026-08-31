@@ -83,3 +83,40 @@ export function LinkIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function CopyIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="8.5" y="8.5" width="11" height="11" rx="1.8" />
+      <path d="M15.5 8.5V6.3A1.8 1.8 0 0 0 13.7 4.5H6.3A1.8 1.8 0 0 0 4.5 6.3v7.4a1.8 1.8 0 0 0 1.8 1.8h2.2" />
+    </svg>
+  );
+}
+
+export function DownloadIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3.5v11.5" />
+      <path d="M7.5 10.5 12 15l4.5-4.5" />
+      <path d="M5 18.5h14" />
+    </svg>
+  );
+}
+
+export function PrintIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M7 8.5V4.5h10v4" />
+      <rect x="4.5" y="8.5" width="15" height="7.5" rx="1.5" />
+      <path d="M7 14.5h10v5H7Z" />
+    </svg>
+  );
+}
+
+export function CheckIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4.5 12.5 9.5 17.5 19.5 6.5" />
+    </svg>
+  );
+}

@@ -1,9 +1,16 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { AgentResponse } from '@/lib/types';
 import { BrandIcon, ChatIcon, SparkleIcon, WarningIcon, InfoIcon, SendIcon, LinkIcon } from './icons';
-import Markdown from './Markdown';
+import TypewriterMarkdown from './TypewriterMarkdown';
+import MessageActions from './MessageActions';
+
+// Recharts reads container dimensions via browser-only APIs (ResizeObserver),
+// so it's loaded client-side only to avoid an SSR/hydration mismatch on the
+// very first paint.
+const Charts = dynamic(() => import('./Charts'), { ssr: false });
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,6 +28,10 @@ export default function ChatInterface() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Tracks which assistant messages have finished their typewriter reveal, so
+  // charts/insights/follow-ups can fade in only once the answer text is done
+  // typing instead of popping in instantly ahead of it.
+  const [revealedAnswers, setRevealedAnswers] = useState<Record<number, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -98,13 +109,26 @@ export default function ChatInterface() {
     'Give me a leadership update',
   ];
 
+  // Shared by example-question cards and follow-up chips: fill the input and
+  // submit on the next tick (after the state update commits) rather than
+  // calling handleSubmit directly, so it always runs with the freshest
+  // `input`/`messages` closure bound to the form.
+  const submitQuestion = (question: string) => {
+    setInput(question);
+    setTimeout(() => {
+      (document.querySelector('form') as HTMLFormElement)?.dispatchEvent(
+        new Event('submit', { bubbles: true })
+      );
+    }, 0);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-ink-950">
       {/* Header */}
       <div className="bg-ink-900 border-b border-ink-700">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-sand-200 rounded-2xl flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 bg-brand-gradient rounded-2xl flex items-center justify-center shrink-0 shadow-glow-sm">
               <BrandIcon className="text-ink-900" width={20} height={20} />
             </div>
             <div>
@@ -130,15 +154,8 @@ export default function ChatInterface() {
                 {exampleQuestions.map((question, idx) => (
                   <button
                     key={idx}
-                    onClick={() => {
-                      setInput(question);
-                      setTimeout(() => {
-                        (document.querySelector('form') as HTMLFormElement)?.dispatchEvent(
-                          new Event('submit', { bubbles: true })
-                        );
-                      }, 0);
-                    }}
-                    className="p-4 text-left bg-ink-800 rounded-2xl border border-ink-700 hover:border-accent-400/60 hover:bg-ink-700 transition-colors"
+                    onClick={() => submitQuestion(question)}
+                    className="p-4 text-left bg-ink-800 rounded-2xl border border-ink-700 hover:border-accent-400/60 hover:bg-ink-700 hover:shadow-glow-sm transition-all"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-ink-700 flex items-center justify-center shrink-0">
@@ -153,7 +170,11 @@ export default function ChatInterface() {
           ) : (
             // Chat messages
             <div className="space-y-4 p-4 md:p-8">
-              {messages.map((msg, idx) => (
+              {messages.map((msg, idx) => {
+                const isAnimating = idx === messages.length - 1 && msg.role === 'assistant' && !loading;
+                const answerRevealed = !isAnimating || !!revealedAnswers[idx];
+
+                return (
                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`${msg.role === 'user' ? 'max-w-2xl' : 'max-w-3xl w-full'} ${
@@ -163,14 +184,26 @@ export default function ChatInterface() {
                     } px-5 py-4`}
                   >
                     {msg.role === 'assistant' ? (
-                      <Markdown>{msg.content}</Markdown>
+                      <TypewriterMarkdown
+                        text={msg.content}
+                        animate={isAnimating}
+                        onComplete={() => setRevealedAnswers(prev => (prev[idx] ? prev : { ...prev, [idx]: true }))}
+                      />
                     ) : (
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                     )}
 
+                    {/* Charts computed from the same data as the answer — held back until
+                        the answer text finishes typing so they don't pop in ahead of it */}
+                    {msg.response && msg.role === 'assistant' && msg.response.charts && msg.response.charts.length > 0 && answerRevealed && (
+                      <div className="mt-3 animate-[fade-in_0.35s_ease-out]">
+                        <Charts charts={msg.response.charts} />
+                      </div>
+                    )}
+
                     {/* Response details for assistant messages */}
-                    {msg.response && msg.role === 'assistant' && (
-                      <div className="mt-4 pt-4 border-t border-ink-700 space-y-3">
+                    {msg.response && msg.role === 'assistant' && answerRevealed && (
+                      <div className="mt-4 pt-4 border-t border-ink-700 space-y-3 animate-[fade-in_0.35s_ease-out]">
                         {msg.response.insights.length > 0 && (
                           <div>
                             <div className="flex items-center gap-2 mb-1.5">
@@ -223,11 +256,32 @@ export default function ChatInterface() {
                           <LinkIcon width={11} height={11} />
                           Sources: {msg.response.sources.join(', ')}
                         </p>
+
+                        {/* Suggested follow-ups, tailored to whichever tool answered this turn */}
+                        {msg.response.followUpQuestions && msg.response.followUpQuestions.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {msg.response.followUpQuestions.map((q, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => submitQuestion(q)}
+                                className="text-[11px] px-3 py-1.5 rounded-full bg-ink-700/70 border border-ink-600 text-accent-300 hover:bg-ink-700 hover:border-accent-400/60 hover:shadow-glow-sm transition-all"
+                              >
+                                {q}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="pt-1 border-t border-ink-700/70">
+                          <MessageActions content={msg.content} />
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
 
               {loading && (
                 <div className="flex justify-start">
@@ -273,7 +327,7 @@ export default function ChatInterface() {
               type="submit"
               disabled={loading || !input.trim()}
               aria-label="Send"
-              className="w-11 h-11 shrink-0 rounded-full bg-accent-400 hover:bg-accent-500 disabled:bg-ink-700 disabled:text-ink-500 text-ink-950 flex items-center justify-center transition-colors"
+              className="w-11 h-11 shrink-0 rounded-full bg-accent-gradient hover:shadow-glow disabled:bg-none disabled:bg-ink-700 disabled:text-ink-500 text-ink-950 flex items-center justify-center transition-all"
             >
               <SendIcon width={18} height={18} />
             </button>

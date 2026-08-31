@@ -94,9 +94,15 @@ POST /api/query
   "insights": ["Energy accounts for 46% of total pipeline"],
   "risks": ["Two deals account for 41% of pipeline (concentration risk)"],
   "dataQualityCaveats": ["5 deals have missing values"],
-  "sources": ["Work Orders Board", "Deals Board"]
+  "sources": ["Work Orders Board", "Deals Board"],
+  "charts": [
+    { "type": "bar", "title": "Pipeline by Sector", "data": [{ "name": "Energy", "value": 3900000 }] }
+  ],
+  "followUpQuestions": ["What are the biggest pipeline risks?", "Compare pipeline across sectors"]
 }
 ```
+
+`charts` and `followUpQuestions` are both optional and both derived from whichever tool(s) the agent actually called for that turn (see `SkylarkAgent.buildCharts` / `buildFollowUps` in `agent.ts`) — never parsed back out of the LLM's free-text answer, so they can't disagree with the numbers/topic in `answer`.
 
 ---
 

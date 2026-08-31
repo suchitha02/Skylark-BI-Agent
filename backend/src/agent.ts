@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import { Deal, WorkOrder, AgentContext, AgentResponse, AgentMessage } from './types';
+import { Deal, WorkOrder, AgentContext, AgentResponse, AgentMessage, ChartSeries } from './types';
 import { Analytics } from './analytics';
 
 const groq = new Groq({
@@ -417,6 +417,7 @@ Always:
 
     // Final response
     const finalAnswer = response.choices[0].message.content || 'No response generated.';
+    const toolNames = toolResults.map(t => t.toolName);
 
     return {
       answer: finalAnswer,
@@ -424,7 +425,157 @@ Always:
       risks: this.extractRisks(finalAnswer),
       dataQualityCaveats: this.context.dataQuality.notes,
       sources: ['Work Orders Board', 'Deals Board'],
+      charts: this.buildCharts(toolNames),
+      followUpQuestions: this.buildFollowUps(toolNames, userQuery),
     };
+  }
+
+  /**
+   * Build chart-ready series for the tools that were actually called this
+   * turn. Computed directly from context/Analytics (the same source the
+   * tool's text answer used), not parsed from the LLM's prose, so a chart
+   * can never disagree with the numbers stated in the answer. Capped at 2
+   * charts per turn to keep the response focused.
+   */
+  private buildCharts(toolNames: string[]): ChartSeries[] {
+    const charts: ChartSeries[] = [];
+    const has = (name: string) => toolNames.includes(name);
+
+    if (has('generate_leadership_update') || has('get_sector_analysis')) {
+      const sectors = Analytics.analyzeSectorPerformance(this.context.deals, this.context.workOrders);
+      if (sectors.length > 0) {
+        charts.push({
+          type: 'bar',
+          title: 'Pipeline Value by Sector',
+          data: sectors.slice(0, 6).map(s => ({ name: s.sector, value: Math.round(s.pipelineValue) })),
+        });
+      }
+    }
+
+    if (has('get_pipeline_overview') && charts.length < 2) {
+      const metrics = this.context.pipelineMetrics!;
+      const entries = Object.entries(metrics.bySector).sort((a, b) => b[1].value - a[1].value).slice(0, 6);
+      if (entries.length > 0) {
+        charts.push({
+          type: 'bar',
+          title: 'Pipeline by Sector',
+          data: entries.map(([sector, d]) => ({ name: sector, value: Math.round(d.value) })),
+        });
+      }
+    }
+
+    if ((has('get_revenue_overview') || has('generate_leadership_update')) && charts.length < 2) {
+      const revenue = Analytics.calculateRevenue(this.context.deals, this.context.workOrders);
+      const entries = Object.entries(revenue.bySector).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      if (entries.length > 0) {
+        charts.push({
+          type: 'pie',
+          title: 'Estimated Revenue by Sector',
+          data: entries.map(([sector, value]) => ({ name: sector, value: Math.round(value) })),
+        });
+      }
+    }
+
+    if (has('get_operational_health') && charts.length < 2) {
+      const metrics = this.context.operationalMetrics!;
+      const entries = Object.entries(metrics.projectsByStatus).sort((a, b) => b[1] - a[1]);
+      if (entries.length > 0) {
+        charts.push({
+          type: 'pie',
+          title: 'Projects by Status',
+          data: entries.map(([status, count]) => ({ name: status, value: count })),
+        });
+      }
+    }
+
+    if (has('get_customer_analysis') && charts.length < 2) {
+      const analysis = Analytics.analyzeCustomerQuality(this.context.deals, this.context.workOrders).slice(0, 6);
+      if (analysis.length > 0) {
+        charts.push({
+          type: 'bar',
+          title: 'Top Customers by Pipeline Value',
+          data: analysis.map(c => ({ name: c.customer, value: Math.round(c.pipelineValue) })),
+        });
+      }
+    }
+
+    if (has('get_top_deals') && charts.length < 2) {
+      const deals = this.context.deals
+        .filter(d => d.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 6);
+      if (deals.length > 0) {
+        charts.push({
+          type: 'bar',
+          title: 'Top Deals by Value',
+          data: deals.map(d => ({ name: d.customer, value: Math.round(d.value) })),
+        });
+      }
+    }
+
+    return charts.slice(0, 2);
+  }
+
+  // Curated pool of relevant next questions per tool, so a follow-up chip
+  // never suggests something unrelated to what was just answered.
+  private static readonly FOLLOW_UP_POOL: Record<string, string[]> = {
+    get_pipeline_overview: [
+      'What are the biggest pipeline risks?',
+      'Compare pipeline across sectors',
+      'Which customers have the largest deals?',
+    ],
+    get_operational_health: [
+      'Which sector has the most delayed projects?',
+      'How does operational health compare by sector?',
+      'Give me a leadership update',
+    ],
+    get_sector_analysis: [
+      'Which sector has the best health score?',
+      'What is the revenue breakdown by sector?',
+      'Which customers are in our top sector?',
+    ],
+    get_customer_analysis: [
+      'Which customers have delayed projects?',
+      'Show me the largest deals',
+      'What is our operational health?',
+    ],
+    get_top_deals: [
+      'What sectors do these deals belong to?',
+      'Give me a leadership update',
+      'What are the biggest pipeline risks?',
+    ],
+    get_data_quality_report: [
+      'How does this affect the revenue estimate?',
+      'Give me a leadership update',
+      'How is our pipeline looking?',
+    ],
+    get_revenue_overview: [
+      'Which sector drives the most revenue?',
+      'How does revenue compare to pipeline?',
+      'What are the data quality caveats behind this estimate?',
+    ],
+    generate_leadership_update: [
+      'What are the biggest pipeline risks?',
+      'Which sector needs the most attention?',
+      'Show me the largest deals',
+    ],
+  };
+
+  private static readonly DEFAULT_FOLLOW_UPS = [
+    'How is our pipeline looking?',
+    'What are the biggest pipeline risks?',
+    'Give me a leadership update',
+  ];
+
+  /**
+   * Suggest 2-3 follow-up questions based on whichever tool most recently
+   * answered the user's query, excluding the question just asked.
+   */
+  private buildFollowUps(toolNames: string[], userQuery: string): string[] {
+    const lastTool = toolNames[toolNames.length - 1];
+    const pool = (lastTool && SkylarkAgent.FOLLOW_UP_POOL[lastTool]) || SkylarkAgent.DEFAULT_FOLLOW_UPS;
+    const normalizedQuery = userQuery.trim().toLowerCase();
+    return pool.filter(q => q.trim().toLowerCase() !== normalizedQuery).slice(0, 3);
   }
 
   /**

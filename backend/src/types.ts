@@ -107,6 +107,15 @@ export interface AgentMessage {
   content: string;
 }
 
+// Chart-ready series computed straight from the same Analytics/context data
+// used to build the tool's text answer (not parsed back out of the LLM's
+// prose), so the numbers plotted always match the numbers stated.
+export interface ChartSeries {
+  type: 'bar' | 'pie';
+  title: string;
+  data: Array<{ name: string; value: number }>;
+}
+
 export interface AgentResponse {
   answer: string;
   metrics?: Record<string, any>;
@@ -114,4 +123,6 @@ export interface AgentResponse {
   risks: string[];
   dataQualityCaveats: string[];
   sources: string[];
+  charts?: ChartSeries[];
+  followUpQuestions?: string[];
 }
