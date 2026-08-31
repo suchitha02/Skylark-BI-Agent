@@ -38,10 +38,12 @@ app.get('/api/debug/columns', async (req, res) => {
       mondayClient.getDeals(),
     ]);
     res.json({
-      workOrderSample: workOrders[0] || null,
-      dealSample: deals[0] || null,
-      workOrderCount: workOrders.length,
-      dealCount: deals.length,
+      workOrderColumns: workOrders.columns,
+      dealColumns: deals.columns,
+      workOrderSample: workOrders.items[0] || null,
+      dealSample: deals.items[0] || null,
+      workOrderCount: workOrders.items.length,
+      dealCount: deals.items.length,
     });
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -73,11 +75,11 @@ app.post('/api/query', async (req, res) => {
     );
 
     // Fetch data from Monday.com
-    let workOrdersItems, dealsItems;
+    let workOrdersBoard, dealsBoard;
 
     try {
-      workOrdersItems = await mondayClient.getWorkOrders();
-      dealsItems = await mondayClient.getDeals();
+      workOrdersBoard = await mondayClient.getWorkOrders();
+      dealsBoard = await mondayClient.getDeals();
     } catch (error) {
       console.error('Monday.com API error:', error);
       return res.status(503).json({
@@ -86,13 +88,14 @@ app.post('/api/query', async (req, res) => {
       });
     }
 
-    // Normalize data
-    const workOrders = workOrdersItems
-      .map(item => DataNormalizer.normalizeWorkOrder(item))
+    // Normalize data (column lookups are matched by title, since Monday.com
+    // auto-generates opaque column ids that differ per board)
+    const workOrders = workOrdersBoard.items
+      .map(item => DataNormalizer.normalizeWorkOrder(item, workOrdersBoard.columns))
       .filter(wo => wo !== null);
 
-    const deals = dealsItems
-      .map(item => DataNormalizer.normalizeDeal(item))
+    const deals = dealsBoard.items
+      .map(item => DataNormalizer.normalizeDeal(item, dealsBoard.columns))
       .filter(d => d !== null);
 
     if (deals.length === 0 && workOrders.length === 0) {

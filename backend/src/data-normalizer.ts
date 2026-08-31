@@ -1,4 +1,4 @@
-import { Deal, WorkOrder, MondayBoardItem, DataQualityReport } from './types';
+import { Deal, WorkOrder, MondayBoardItem, MondayColumn, DataQualityReport } from './types';
 
 const MISSING_VALUE_PATTERNS = ['', 'N/A', 'NA', 'null', 'none', 'unknown', '-', '?'];
 
@@ -159,28 +159,69 @@ export class DataNormalizer {
   }
 
   /**
+   * Build a lookup of column values keyed by column TITLE (lowercased), not
+   * column id. Monday.com auto-generates opaque ids like "numeric_mm6r74n4"
+   * that differ per board, so matching by id only works if hardcoded per
+   * board. Titles are the stable, human-meaningful identifier.
+   */
+  static buildColumnMap(
+    item: MondayBoardItem,
+    columns: MondayColumn[]
+  ): Record<string, string | null> {
+    const idToTitle: Record<string, string> = {};
+    columns.forEach(c => {
+      idToTitle[c.id] = c.title.trim().toLowerCase();
+    });
+
+    const map: Record<string, string | null> = {};
+    item.column_values.forEach(cv => {
+      const title = idToTitle[cv.id];
+      if (title) {
+        map[title] = cv.text || cv.value || null;
+      }
+    });
+    return map;
+  }
+
+  /**
+   * Find a column's value by trying each keyword (in priority order)
+   * against every column title (substring match), returning the first
+   * non-empty value found.
+   */
+  static findByKeywords(
+    columnMap: Record<string, string | null>,
+    keywords: string[]
+  ): string | null {
+    const entries = Object.entries(columnMap);
+    for (const keyword of keywords) {
+      for (const [title, value] of entries) {
+        if (title.includes(keyword) && value !== null && value !== undefined && value !== '') {
+          return value;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
    * Normalize a Work Order item from Monday.com
    */
-  static normalizeWorkOrder(item: MondayBoardItem): WorkOrder | null {
+  static normalizeWorkOrder(item: MondayBoardItem, columns: MondayColumn[] = []): WorkOrder | null {
     try {
       const qualityFlags: string[] = [];
 
-      // Build a map of column values for easy access
-      const columnMap: Record<string, string | null> = {};
-      item.column_values.forEach(cv => {
-        columnMap[cv.id] = cv.text || cv.value || null;
-      });
+      const columnMap = this.buildColumnMap(item, columns);
 
-      // Extract fields (column IDs may vary, try common patterns)
+      // Extract fields by matching column titles against likely keywords
       const name = item.name;
       const customer = this.normalizeCustomerName(
-        columnMap['customer'] || columnMap['name'] || name
+        this.findByKeywords(columnMap, ['customer', 'company', 'client', 'account']) || name
       );
-      const status = this.normalizeStatus(columnMap['status']);
-      const sector = this.normalizeSector(columnMap['sector'] || columnMap['industry']);
-      const startDate = this.parseDate(columnMap['start_date'] || columnMap['date1']);
-      const endDate = this.parseDate(columnMap['end_date'] || columnMap['date2']);
-      const completionDate = this.parseDate(columnMap['completion_date'] || columnMap['completed_at']);
+      const status = this.normalizeStatus(this.findByKeywords(columnMap, ['status']));
+      const sector = this.normalizeSector(this.findByKeywords(columnMap, ['sector', 'industry']));
+      const startDate = this.parseDate(this.findByKeywords(columnMap, ['start date', 'start']));
+      const endDate = this.parseDate(this.findByKeywords(columnMap, ['end date', 'end']));
+      const completionDate = this.parseDate(this.findByKeywords(columnMap, ['completion', 'completed']));
 
       if (!customer) qualityFlags.push('missing_customer');
       if (!status) qualityFlags.push('missing_status');
@@ -208,25 +249,24 @@ export class DataNormalizer {
   /**
    * Normalize a Deal item from Monday.com
    */
-  static normalizeDeal(item: MondayBoardItem): Deal | null {
+  static normalizeDeal(item: MondayBoardItem, columns: MondayColumn[] = []): Deal | null {
     try {
       const qualityFlags: string[] = [];
 
-      const columnMap: Record<string, string | null> = {};
-      item.column_values.forEach(cv => {
-        columnMap[cv.id] = cv.text || cv.value || null;
-      });
+      const columnMap = this.buildColumnMap(item, columns);
 
       const name = item.name;
       const customer = this.normalizeCustomerName(
-        columnMap['customer'] || columnMap['name'] || name
+        this.findByKeywords(columnMap, ['customer', 'company', 'client', 'account']) || name
       );
-      const sector = this.normalizeSector(columnMap['sector'] || columnMap['industry']);
-      const valueStr = columnMap['value'] || columnMap['amount'] || columnMap['deal_value'];
+      const sector = this.normalizeSector(this.findByKeywords(columnMap, ['sector', 'industry']));
+      const valueStr = this.findByKeywords(columnMap, ['deal value', 'value', 'amount', 'revenue', 'price']);
       const value = this.parseCurrency(valueStr);
-      const stage = this.normalizeStatus(columnMap['stage'] || columnMap['status']);
-      const expectedClose = this.parseDate(columnMap['expected_close'] || columnMap['close_date']);
-      const createdDate = this.parseDate(columnMap['created'] || columnMap['created_at']);
+      const stage = this.normalizeStatus(this.findByKeywords(columnMap, ['stage']));
+      const expectedClose = this.parseDate(
+        this.findByKeywords(columnMap, ['expected close', 'close date', 'closing'])
+      );
+      const createdDate = this.parseDate(this.findByKeywords(columnMap, ['created']));
 
       if (!customer) qualityFlags.push('missing_customer');
       if (value === null) qualityFlags.push('missing_value');

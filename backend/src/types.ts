@@ -10,9 +10,15 @@ export interface MondayBoardItem {
   }>;
 }
 
+export interface MondayColumn {
+  id: string;
+  title: string;
+}
+
 export interface MondayBoardResponse {
   data: {
     boards: Array<{
+      columns: MondayColumn[];
       items_page: {
         cursor: string | null;
         items: MondayBoardItem[];

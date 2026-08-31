@@ -1,7 +1,12 @@
 import axios from 'axios';
-import { MondayBoardResponse, MondayBoardItem } from './types';
+import { MondayBoardResponse, MondayBoardItem, MondayColumn } from './types';
 
 const MONDAY_API_URL = 'https://api.monday.com/v2';
+
+export interface BoardData {
+  items: MondayBoardItem[];
+  columns: MondayColumn[];
+}
 
 export class MondayClient {
   private apiKey: string;
@@ -21,11 +26,15 @@ export class MondayClient {
   /**
    * Fetch all items from a board with comprehensive column data
    */
-  async getBoardItems(boardId: string): Promise<MondayBoardItem[]> {
+  async getBoardItems(boardId: string): Promise<BoardData> {
     try {
       const query = `
         query {
           boards(ids: ${boardId}) {
+            columns {
+              id
+              title
+            }
             items_page(limit: 500) {
               cursor
               items {
@@ -62,12 +71,12 @@ export class MondayClient {
 
       const board = response.data.data.boards[0];
       if (!board || !board.items_page) {
-        return [];
+        return { items: [], columns: [] };
       }
 
       // Note: items_page is capped at 500 items per page (Monday.com API limit).
       // Boards larger than that would need cursor-based pagination via next_items_page.
-      return board.items_page.items;
+      return { items: board.items_page.items, columns: board.columns || [] };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(`Failed to fetch board ${boardId}: ${error.message}`);
@@ -79,14 +88,14 @@ export class MondayClient {
   /**
    * Fetch Work Orders board
    */
-  async getWorkOrders(): Promise<MondayBoardItem[]> {
+  async getWorkOrders(): Promise<BoardData> {
     return this.getBoardItems(this.workOrdersBoardId);
   }
 
   /**
    * Fetch Deals board
    */
-  async getDeals(): Promise<MondayBoardItem[]> {
+  async getDeals(): Promise<BoardData> {
     return this.getBoardItems(this.dealsBoardId);
   }
 
