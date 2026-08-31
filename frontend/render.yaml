@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: skylark-drones-bi-agent
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NEXT_PUBLIC_MONDAY_API_KEY
+        description: Monday.com API Token
+      - key: GROQ_API_KEY
+        description: Groq API Key (Server-side only)
+      - key: NEXT_PUBLIC_WORK_ORDERS_BOARD_ID
+        description: Monday.com Work Orders Board ID
+        value: "5030994891"
+      - key: NEXT_PUBLIC_DEALS_BOARD_ID
+        description: Monday.com Deals Board ID
+        value: "5030994911"
+      - key: NEXT_PUBLIC_APP_NAME
+        value: Skylark Drones BI Agent

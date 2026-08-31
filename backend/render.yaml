@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: skylark-drones-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONDAY_API_KEY
+        scope: build
+        sync: false
+      - key: WORK_ORDERS_BOARD_ID
+        scope: build
+        sync: false
+      - key: DEALS_BOARD_ID
+        scope: build
+        sync: false
+      - key: GROQ_API_KEY
+        scope: build
+        sync: false
+      - key: FRONTEND_URL
+        value: https://skylark-drones.vercel.app
+        scope: build
+        sync: false
+      - key: NODE_ENV
+        value: production
+        scope: build
+        sync: false

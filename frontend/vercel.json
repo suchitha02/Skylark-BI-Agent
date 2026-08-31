@@ -1,0 +1,19 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "env": [
+    {
+      "key": "NEXT_PUBLIC_BACKEND_URL",
+      "description": "Backend API URL (e.g., https://skylark-drones-backend.onrender.com)",
+      "example": "https://skylark-drones-backend.onrender.com"
+    },
+    {
+      "key": "NEXT_PUBLIC_APP_NAME",
+      "description": "Application Name",
+      "default": "Skylark Drones BI Agent"
+    }
+  ]
+}
