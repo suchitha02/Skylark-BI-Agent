@@ -108,7 +108,7 @@ export default function ChatInterface() {
             </div>
             <div>
               <h1 className="text-lg font-semibold text-white leading-tight">Skylark Drones</h1>
-              <p className="text-xs text-mint-300">AI Business Intelligence Agent</p>
+              <p className="text-xs text-accent-300">AI Business Intelligence Agent</p>
             </div>
           </div>
         </div>
@@ -137,11 +137,11 @@ export default function ChatInterface() {
                         );
                       }, 0);
                     }}
-                    className="p-4 text-left bg-ink-800 rounded-2xl border border-ink-700 hover:border-mint-400/60 hover:bg-ink-700 transition-colors"
+                    className="p-4 text-left bg-ink-800 rounded-2xl border border-ink-700 hover:border-accent-400/60 hover:bg-ink-700 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-ink-700 flex items-center justify-center shrink-0">
-                        <ChatIcon className="text-mint-400" width={16} height={16} />
+                        <ChatIcon className="text-accent-400" width={16} height={16} />
                       </div>
                       <span className="text-sm font-medium text-sand-100">{question}</span>
                     </div>
@@ -169,10 +169,10 @@ export default function ChatInterface() {
                         {msg.response.insights.length > 0 && (
                           <div>
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className="w-5 h-5 rounded-md bg-mint-400/15 flex items-center justify-center">
-                                <SparkleIcon className="text-mint-400" width={12} height={12} />
+                              <span className="w-5 h-5 rounded-md bg-accent-400/15 flex items-center justify-center">
+                                <SparkleIcon className="text-accent-400" width={12} height={12} />
                               </span>
-                              <p className="text-xs font-semibold text-mint-300">Key Insights</p>
+                              <p className="text-xs font-semibold text-accent-300">Key Insights</p>
                             </div>
                             <ul className="text-xs text-sand-100/75 space-y-1 pl-7">
                               {msg.response.insights.map((insight, i) => (
@@ -185,10 +185,10 @@ export default function ChatInterface() {
                         {msg.response.risks.length > 0 && (
                           <div>
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className="w-5 h-5 rounded-md bg-coral-400/15 flex items-center justify-center">
-                                <WarningIcon className="text-coral-400" width={12} height={12} />
+                              <span className="w-5 h-5 rounded-md bg-warn-400/15 flex items-center justify-center">
+                                <WarningIcon className="text-warn-400" width={12} height={12} />
                               </span>
-                              <p className="text-xs font-semibold text-coral-300">Risks to Monitor</p>
+                              <p className="text-xs font-semibold text-warn-300">Risks to Monitor</p>
                             </div>
                             <ul className="text-xs text-sand-100/75 space-y-1 pl-7">
                               {msg.response.risks.map((risk, i) => (
@@ -229,9 +229,9 @@ export default function ChatInterface() {
                   <div className="bg-ink-800 text-sand-100 rounded-3xl rounded-tl-md px-5 py-4 border border-ink-700">
                     <div className="flex gap-2 items-center">
                       <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-mint-400 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-mint-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                        <div className="w-2 h-2 bg-mint-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                        <div className="w-2 h-2 bg-accent-400 rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-accent-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                        <div className="w-2 h-2 bg-accent-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                       </div>
                       <span className="text-xs text-sand-100/60">Analyzing data...</span>
                     </div>
@@ -240,7 +240,7 @@ export default function ChatInterface() {
               )}
 
               {error && (
-                <div className="bg-coral-400/10 border border-coral-400/30 rounded-2xl px-4 py-3 text-sm text-coral-300 flex items-center gap-2">
+                <div className="bg-warn-400/10 border border-warn-400/30 rounded-2xl px-4 py-3 text-sm text-warn-300 flex items-center gap-2">
                   <WarningIcon width={14} height={14} />
                   Error: {error}
                 </div>
@@ -262,13 +262,13 @@ export default function ChatInterface() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about pipeline, operations, sectors, or customers..."
               disabled={loading}
-              className="flex-1 px-5 py-3 rounded-full bg-ink-800 border border-ink-700 text-sm text-sand-100 placeholder-sand-100/35 focus:outline-none focus:border-mint-400/70 focus:ring-1 focus:ring-mint-400/40 disabled:opacity-60 transition-colors"
+              className="flex-1 px-5 py-3 rounded-full bg-ink-800 border border-ink-700 text-sm text-sand-100 placeholder-sand-100/35 focus:outline-none focus:border-accent-400/70 focus:ring-1 focus:ring-accent-400/40 disabled:opacity-60 transition-colors"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
               aria-label="Send"
-              className="w-11 h-11 shrink-0 rounded-full bg-mint-400 hover:bg-mint-500 disabled:bg-ink-700 disabled:text-ink-500 text-ink-950 flex items-center justify-center transition-colors"
+              className="w-11 h-11 shrink-0 rounded-full bg-accent-400 hover:bg-accent-500 disabled:bg-ink-700 disabled:text-ink-500 text-ink-950 flex items-center justify-center transition-colors"
             >
               <SendIcon width={18} height={18} />
             </button>

@@ -8,28 +8,33 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Deep-teal fintech-style palette (matches the app's dark, rounded-card look)
+        // Sampled directly from the reference screenshots (a dark navy-blue
+        // fintech UI) — this is a blue palette, not teal-green.
         ink: {
-          950: '#0e2624',
-          900: '#122e2b',
-          800: '#1a3835',
-          700: '#234541',
-          600: '#2f544e',
-          500: '#42685f',
+          950: '#08171e', // page/body background (sampled #08171e)
+          900: '#0c1e26', // header / input bar, one step up from page bg
+          800: '#1a3139', // elevated card surface (sampled #1a3139)
+          700: '#24404a', // card border
+          600: '#345866',
+          500: '#456e7c',
+        },
+        accent: {
+          // Blue-teal surface/accent family (sampled #3e7480 / #558d99)
+          300: '#9cc8d2',
+          400: '#5fa3b3',
+          500: '#3e7480',
         },
         sand: {
-          100: '#f6efe1',
-          200: '#ede0c9',
-          300: '#e2cfa8',
+          // Warm cream card color (sampled #cfc6c1)
+          100: '#e3dad2',
+          200: '#cfc6c1',
+          300: '#b6aca4',
         },
-        mint: {
-          300: '#a9e6c2',
-          400: '#7ed9a7',
-          500: '#57c48e',
-        },
-        coral: {
-          300: '#f0c39a',
-          400: '#e2a37a',
+        warn: {
+          // Muted warm tone for risk/warning callouts — the reference itself
+          // has no red/orange, so this stays desaturated to fit alongside it.
+          300: '#dab08f',
+          400: '#c99b7c',
         },
       },
       borderRadius: {
