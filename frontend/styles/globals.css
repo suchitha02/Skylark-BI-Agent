@@ -6,8 +6,26 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  background-color: #0e2624;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background-color: #7ed9a7;
+  color: #0e2624;
+}
+
+/* Slim, low-contrast scrollbar that fits the dark theme (WebKit) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #2f544e;
+  border-radius: 9999px;
 }
