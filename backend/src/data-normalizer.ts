@@ -264,7 +264,7 @@ export class DataNormalizer {
       const value = this.parseCurrency(valueStr);
       const stage = this.normalizeStatus(this.findByKeywords(columnMap, ['stage']));
       const expectedClose = this.parseDate(
-        this.findByKeywords(columnMap, ['expected close', 'close date', 'closing'])
+        this.findByKeywords(columnMap, ['tentative close', 'expected close', 'close date', 'closing'])
       );
       const createdDate = this.parseDate(this.findByKeywords(columnMap, ['created']));
 
