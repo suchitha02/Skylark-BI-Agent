@@ -221,7 +221,12 @@ Open http://localhost:3000 and try:
 - On-demand leadership updates (`generate_leadership_update`): pipeline, revenue, ops, top sectors, risks, and data quality in one structured summary
 
 ### ✅ Professional UI
-- Modern chat interface
+- Modern chat interface, custom SVG icon set (no emojis), dark navy/blue palette with gradient + glow accents
+- Markdown rendering (tables, bold, headers, line breaks) instead of raw markdown syntax
+- Inline bar/pie charts (pipeline, revenue, operations, sector, customer) computed from the same data as the text answer
+- Context-aware follow-up question chips after each response, clickable to re-submit
+- Copy / download-as-Markdown / print-to-PDF export on every answer
+- Typewriter-style reveal for assistant responses
 - Loading states
 - Error handling
 - Insights highlighting

@@ -82,6 +82,14 @@ The agent:
 - Clear metrics with context
 - Actionable recommendations
 
+✅ **Rich Response UI**
+- Markdown rendering (tables, bold, headers, `<br>` line breaks) instead of literal markdown syntax showing up as text
+- Inline bar/pie charts (Recharts) for pipeline, revenue, operations, sector, and customer answers — computed from the same `Analytics` call as the text, not parsed back out of it
+- Context-aware follow-up question chips per turn (keyed off whichever tool answered it), clickable to re-submit
+- Copy / download-as-Markdown / print-to-PDF export on every answer
+- Typewriter-style reveal for assistant answers, with charts/insights fading in once the text finishes
+- Custom SVG icon set (no emojis) and a dark navy/blue palette with gradient + glow accents
+
 ## Architecture
 
 ```
@@ -548,24 +556,28 @@ FOR EACH customer:
 1. **Revenue Data** - No actual revenue field in datasets, using work order completion as proxy
 2. **Forecasting** - No historical trend analysis or forecasting
 3. **Alerts** - No automatic notifications for changes/risks
-4. **Dashboards** - Dashboard visualization not implemented (conversational interface only)
+4. **Dashboards** - No standalone dashboard page; visualizations are inline per-answer charts within the chat (bar/pie), not a persistent KPI dashboard
 5. **Authentication** - No user authentication (single-user agent for demo)
 6. **Audit Trail** - Limited query logging for compliance
 
 ### Future Improvements (With More Time)
 
+**Shipped since the initial submission** (see root `DECISION_LOG.md` → "Beyond the core requirements"):
+- ✅ Chart visualizations (pipeline by sector, revenue by sector, operations by status, top customers/deals)
+- ✅ Suggested follow-up questions after each response
+- ✅ Export of any answer (copy / Markdown / print-to-PDF)
+- ✅ Typing-reveal animation on responses (a frontend animation over the complete answer, not live LLM token streaming)
+
 **Short term (1-2 days)**
-- Dashboard with KPI cards (Revenue, Pipeline, Health Score)
+- Dashboard with KPI cards (Revenue, Pipeline, Health Score) as a standalone page, distinct from the inline per-answer charts that exist today
 - Query history panel
-- Chart visualizations (pipeline by sector, deal status distribution)
-- Suggested follow-up questions after each response
-- Better streaming UI (show "Retrieving data..." progress)
+- Real token-level streaming from Groq over SSE/chunked HTTP (today's "typing" effect reveals an already-complete response)
 
 **Medium term (1 week)**
 - User authentication (separate contexts per user)
 - Historical trend analysis and forecasting
 - Automated risk alerts ("5 deals at risk of delay")
-- Email export of leadership updates
+- Email delivery of leadership updates (file export already exists; this would add sending)
 - Webhook integration for real-time notifications
 
 **Long term (ongoing)**

@@ -164,7 +164,7 @@ by_sector / by_customer = group completed_orders by sector/customer, valued at a
 
 **Excluded (Time Constraints)**:
 1. **User authentication** — Single-user demo agent, not multi-tenant
-2. **Dashboards** — Focus on conversational interface, charts are future work
+2. **Standalone dashboard page** — Still conversational-interface-first; inline per-answer bar/pie charts were added later (see root `DECISION_LOG.md` → "Beyond the core requirements"), but there's no persistent KPI dashboard
 3. **Automated alerts** — "Deal at risk" notifications not implemented
 4. **Historical trends** — No forecasting or trend analysis
 5. **Email export** — No report sending via email
@@ -249,10 +249,10 @@ Run against test queries, track accuracy over time.
 - Revenue forecast based on historical patterns
 
 ### 5. Richer UI (2-3 hours)
-- Executive dashboard with KPI cards
-- Charts: pipeline funnel, sector distribution, timeline
-- Query history in sidebar
-- Export to PDF/email capability
+- Executive dashboard with KPI cards (standalone page — still not built)
+- ~~Charts: pipeline funnel, sector distribution, timeline~~ — done: inline bar/pie charts per answer (pipeline, revenue, operations, sector, customer), see root `DECISION_LOG.md`
+- Query history in sidebar (still not built)
+- ~~Export to PDF/email capability~~ — done for PDF/Markdown/copy; email delivery specifically is still not built
 
 ---
 

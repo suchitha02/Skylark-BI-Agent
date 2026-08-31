@@ -172,6 +172,14 @@ styles/
 - Risk identification and severity
 - Actionable recommendations
 
+**Rich Response UI** *(added after initial submission — see root `DECISION_LOG.md` → "Beyond the core requirements")*
+- Markdown rendering (tables, bold, headers, line breaks) instead of literal syntax
+- Inline bar/pie charts computed from the same analytics as the text answer
+- Context-aware follow-up question chips, clickable to re-submit
+- Copy / download-as-Markdown / print-to-PDF export on every answer
+- Typewriter-style reveal for assistant answers
+- Custom SVG icon set and a dark navy/blue palette with gradient + glow accents
+
 ---
 
 ## How It Works
@@ -319,10 +327,10 @@ Every choice was made to balance:
 "Because founders need accurate numbers, not AI guesses. The agent uses tools to calculate metrics deterministically, then uses the LLM for interpretation. If I asked the LLM 'What's our pipeline?' it might hallucinate ₹15M when it's actually ₹8.4M. My way, the number always comes from the data."
 
 ### "What would you build next?"
-"With another week: (1) Dashboard with KPI cards instead of text-only, (2) Historical trend analysis and forecasting, (3) Automated alerts for risks, (4) User authentication for multi-team support. The architecture is designed to support these without major refactoring."
+"With another week: (1) A standalone dashboard page with KPI cards — today's charts are inline per chat answer, not a persistent dashboard, (2) Historical trend analysis and forecasting, (3) Automated alerts for risks, (4) User authentication for multi-team support, (5) Real token-level streaming from Groq (today's typing effect animates an already-complete response). The architecture is designed to support these without major refactoring."
 
 ### "How did you manage the 6-hour timeline?"
-"Ruthless prioritization. I focused on P0 features first: Monday.com integration, data normalization, core BI calculations, agent orchestration, deployment. Only added P1 features (insights/risks/quality reporting) when P0 was stable. Intentionally skipped P2 (dashboards, caching, advanced analytics) to ensure quality of core features."
+"Ruthless prioritization. I focused on P0 features first: Monday.com integration, data normalization, core BI calculations, agent orchestration, deployment. Only added P1 features (insights/risks/quality reporting) when P0 was stable. Intentionally skipped P2 (dashboards, caching, advanced analytics) to ensure quality of core features. Chart visualizations, follow-up suggestions, and export were added in a later pass, once the core was verified solid — see root `DECISION_LOG.md`."
 
 ---
 
