@@ -250,7 +250,7 @@ Always:
 - Ask clarifying questions if the query is ambiguous
 - Give actionable insights, not just raw numbers`;
 
-    const GROQ_MODEL = 'llama-3.3-70b-versatile';
+    const GROQ_MODEL = 'llama-3.1-8b-instant';
 
     const messages: any[] = [
       {
