@@ -7,16 +7,16 @@ export interface MondayBoardItem {
     type: string;
     text?: string;
     value?: string;
-    additional_info?: {
-      currencyCode?: string;
-    };
   }>;
 }
 
 export interface MondayBoardResponse {
   data: {
     boards: Array<{
-      items: MondayBoardItem[];
+      items_page: {
+        cursor: string | null;
+        items: MondayBoardItem[];
+      };
     }>;
   };
 }

@@ -26,15 +26,17 @@ export class MondayClient {
       const query = `
         query {
           boards(ids: ${boardId}) {
-            items(limit: 500) {
-              id
-              name
-              column_values {
+            items_page(limit: 500) {
+              cursor
+              items {
                 id
-                type
-                text
-                value
-                additional_info
+                name
+                column_values {
+                  id
+                  type
+                  text
+                  value
+                }
               }
             }
           }
@@ -48,6 +50,7 @@ export class MondayClient {
           headers: {
             Authorization: this.apiKey,
             'Content-Type': 'application/json',
+            'API-Version': '2024-10',
           },
         }
       );
@@ -58,11 +61,13 @@ export class MondayClient {
       }
 
       const board = response.data.data.boards[0];
-      if (!board || !board.items) {
+      if (!board || !board.items_page) {
         return [];
       }
 
-      return board.items;
+      // Note: items_page is capped at 500 items per page (Monday.com API limit).
+      // Boards larger than that would need cursor-based pagination via next_items_page.
+      return board.items_page.items;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(`Failed to fetch board ${boardId}: ${error.message}`);
