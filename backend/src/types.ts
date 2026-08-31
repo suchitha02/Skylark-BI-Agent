@@ -68,6 +68,11 @@ export interface RevenueMetrics {
   byCustomer: Record<string, number>;
   bySector: Record<string, number>;
   completedProjects: number;
+  // The dataset has no ground-truth "revenue" field. Revenue is estimated as
+  // (completed work orders) x (average value of Won deals), so this must
+  // always be presented to the user as an estimate, not a measured figure.
+  isEstimated: boolean;
+  avgDealValueUsed: number;
 }
 
 export interface OperationalMetrics {

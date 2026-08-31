@@ -26,10 +26,26 @@ app.get('/health', (req, res) => {
 // Main query endpoint
 app.post('/api/query', async (req, res) => {
   try {
-    const { query } = req.body;
+    const { query, history } = req.body;
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       return res.status(400).json({ error: 'Query is required and must be non-empty' });
+    }
+
+    // Optional conversation history so the agent can handle follow-ups and
+    // its own clarifying questions across turns. Validate defensively and
+    // cap length server-side (in addition to whatever the client sends) so
+    // one runaway client can't blow up the prompt.
+    let conversationHistory = [];
+    if (Array.isArray(history)) {
+      conversationHistory = history
+        .filter(
+          m =>
+            m &&
+            (m.role === 'user' || m.role === 'assistant') &&
+            typeof m.content === 'string'
+        )
+        .slice(-10);
     }
 
     // Initialize Monday.com client
@@ -78,6 +94,7 @@ app.post('/api/query', async (req, res) => {
     // Calculate metrics
     const pipelineMetrics = Analytics.calculatePipeline(deals);
     const operationalMetrics = Analytics.calculateOperational(workOrders);
+    const revenueMetrics = Analytics.calculateRevenue(deals, workOrders);
     const dataQuality = DataNormalizer.generateQualityReport(deals, workOrders);
 
     // Build agent context
@@ -86,13 +103,14 @@ app.post('/api/query', async (req, res) => {
       workOrders,
       pipelineMetrics,
       operationalMetrics,
-      revenueMetrics: null,
+      revenueMetrics,
       dataQuality,
     };
 
-    // Create and query agent
+    // Create and query agent (with prior turns, so clarifying questions and
+    // follow-ups actually have context to work with)
     const agent = new SkylarkAgent(agentContext);
-    const response = await agent.query(query);
+    const response = await agent.query(query, conversationHistory);
 
     return res.status(200).json(response);
   } catch (error) {

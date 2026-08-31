@@ -121,7 +121,7 @@ Try these questions:
 **Solutions**:
 1. Verify Groq API key is correct in `.env.local`
 2. Check you haven't exceeded Groq API rate limits
-3. Verify model name is supported (should be `mixtral-8x7b-32768`)
+3. Verify model name is supported (should be `openai/gpt-oss-20b`)
 4. Check internet connection
 
 ### Issue: Build errors with TypeScript

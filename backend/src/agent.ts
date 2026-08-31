@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import { Deal, WorkOrder, AgentContext, AgentResponse } from './types';
+import { Deal, WorkOrder, AgentContext, AgentResponse, AgentMessage } from './types';
 import { Analytics } from './analytics';
 
 const groq = new Groq({
@@ -114,6 +114,37 @@ export class SkylarkAgent {
           },
         },
       },
+      {
+        type: 'function' as const,
+        function: {
+          name: 'get_revenue_overview',
+          description:
+            'Get estimated revenue, since neither board has a ground-truth revenue field. ' +
+            'Estimated as (completed work orders) x (average value of Won deals). Always ' +
+            'present this to the user as an estimate, not a measured number.',
+          parameters: {
+            type: 'object' as const,
+            properties: {},
+            required: [],
+          },
+        },
+      },
+      {
+        type: 'function' as const,
+        function: {
+          name: 'generate_leadership_update',
+          description:
+            'Generate a structured executive/leadership update in one call: pipeline summary, ' +
+            'estimated revenue, operational health, top sectors, top risks, and data quality notes. ' +
+            'Use this when the user asks for a "leadership update", "executive summary", "status update", ' +
+            'or "weekly/monthly summary" instead of calling the individual metric tools separately.',
+          parameters: {
+            type: 'object' as const,
+            properties: {},
+            required: [],
+          },
+        },
+      },
     ];
   }
 
@@ -217,6 +248,71 @@ export class SkylarkAgent {
           return result;
         }
 
+        case 'get_revenue_overview': {
+          const revenue = Analytics.calculateRevenue(this.context.deals, this.context.workOrders);
+          let result = `Estimated Revenue: ${Analytics.formatCurrency(revenue.totalRevenue)} `;
+          result += `(ESTIMATE ONLY — neither board has a real revenue field; `;
+          result += `computed as ${revenue.completedProjects} completed work orders x avg Won deal value `;
+          result += `of ${Analytics.formatCurrency(revenue.avgDealValueUsed)})\n\n`;
+          result += 'By Sector:\n';
+          Object.entries(revenue.bySector).forEach(([sector, value]) => {
+            result += `  ${sector}: ${Analytics.formatCurrency(value)}\n`;
+          });
+          result += '\nBy Customer (top 5):\n';
+          Object.entries(revenue.byCustomer)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .forEach(([customer, value]) => {
+              result += `  ${customer}: ${Analytics.formatCurrency(value)}\n`;
+            });
+          return result;
+        }
+
+        case 'generate_leadership_update': {
+          const pipeline = this.context.pipelineMetrics!;
+          const operational = this.context.operationalMetrics!;
+          const revenue = Analytics.calculateRevenue(this.context.deals, this.context.workOrders);
+          const sectors = Analytics.analyzeSectorPerformance(this.context.deals, this.context.workOrders);
+          const dq = this.context.dataQuality;
+
+          let result = 'LEADERSHIP UPDATE\n\n';
+
+          result += `Pipeline: ${Analytics.formatCurrency(pipeline.totalValue)} across ${pipeline.dealCount} deals\n`;
+          result += `Estimated Revenue: ${Analytics.formatCurrency(revenue.totalRevenue)} from ${revenue.completedProjects} completed work orders (ESTIMATE — no ground-truth revenue field in the data)\n`;
+          result += `Operations: ${operational.activeProjects} active, ${operational.completedProjects} completed, ${operational.delayedProjects} delayed\n\n`;
+
+          result += 'Top Sectors by Pipeline Value:\n';
+          sectors.slice(0, 3).forEach(sector => {
+            result += `  ${sector.sector}: ${Analytics.formatCurrency(sector.pipelineValue)} pipeline, health score ${sector.healthScore.toFixed(0)}/100\n`;
+          });
+
+          result += '\nRisks to Monitor:\n';
+          const delayedSectors = sectors.filter(s => s.delayedProjects > 0).sort((a, b) => b.delayedProjects - a.delayedProjects);
+          if (delayedSectors.length > 0) {
+            result += `  - ${delayedSectors[0].sector} has ${delayedSectors[0].delayedProjects} delayed project(s)\n`;
+          }
+          const topDealShare = pipeline.topDeals.length > 0 && pipeline.totalValue > 0
+            ? (pipeline.topDeals[0].value / pipeline.totalValue) * 100
+            : 0;
+          if (topDealShare > 20) {
+            result += `  - Concentration risk: top deal (${pipeline.topDeals[0].customer}) is ${topDealShare.toFixed(0)}% of total pipeline\n`;
+          }
+          if (delayedSectors.length === 0 && topDealShare <= 20) {
+            result += '  - No major concentration or delay risks detected in current data\n';
+          }
+
+          result += '\nData Quality Notes:\n';
+          result += `  ${dq.validRecords}/${dq.totalRecords} records valid`;
+          if (dq.notes.length > 0) {
+            result += '\n';
+            dq.notes.forEach(note => (result += `  - ${note}\n`));
+          } else {
+            result += '\n';
+          }
+
+          return result;
+        }
+
         default:
           return 'Tool not found.';
       }
@@ -226,9 +322,15 @@ export class SkylarkAgent {
   }
 
   /**
-   * Query the agent with natural language
+   * Query the agent with natural language.
+   *
+   * `history` is the prior turns of this conversation (user + assistant
+   * messages, oldest first, NOT including the current `userQuery`). Passing
+   * it lets the agent understand follow-ups ("what about just Energy?") and
+   * lets a user actually answer a clarifying question the agent asked in the
+   * previous turn, instead of every request being evaluated in isolation.
    */
-  async query(userQuery: string): Promise<AgentResponse> {
+  async query(userQuery: string, history: AgentMessage[] = []): Promise<AgentResponse> {
     const systemPrompt = `You are a business intelligence agent for Skylark Drones. Your role is to answer founder and executive questions about business performance.
 
 Available data:
@@ -237,17 +339,20 @@ Available data:
 
 Your task:
 1. Understand what the user is asking about (pipeline, operations, sectors, customers, revenue)
-2. Use the appropriate tools to gather data
+2. Use the appropriate tools to gather data — use generate_leadership_update for "leadership update" / "executive summary" / "status update" style requests instead of calling several individual tools yourself
 3. Analyze the results
 4. Provide clear, concise executive-level insights
 5. Highlight risks and opportunities
-6. Be transparent about data limitations
+6. Be transparent about data limitations, and treat revenue as an ESTIMATE (there is no ground-truth revenue field in this data)
+
+Conversation context:
+- You may be shown prior turns of this conversation before the current question. Use them: if you asked a clarifying question last turn, treat the user's new message as the answer to it, not a fresh unrelated query. If a follow-up refers to "that sector" or "those deals", resolve it from the prior turns.
 
 Always:
 - Use actual data from the tools, don't make up numbers
 - Highlight data quality issues that affect your analysis
 - Provide context and explain why findings matter
-- Ask clarifying questions if the query is ambiguous
+- Ask clarifying questions if the query is ambiguous (the user's next message will be their answer)
 - Give actionable insights, not just raw numbers`;
 
     const GROQ_MODEL = 'openai/gpt-oss-20b';
@@ -257,6 +362,7 @@ Always:
         role: 'system',
         content: systemPrompt,
       },
+      ...history.map(m => ({ role: m.role, content: m.content })),
       {
         role: 'user',
         content: userQuery,

@@ -87,7 +87,7 @@ MONDAY_API_KEY=your_monday_api_token
 WORK_ORDERS_BOARD_ID=5030994891
 DEALS_BOARD_ID=5030994911
 GROQ_API_KEY=your_groq_api_key
-FRONTEND_URL=https://skylark-drones.vercel.app
+FRONTEND_URL=https://skylark-bi-agent-frontend-pi.vercel.app
 NODE_ENV=production
 ```
 
@@ -101,13 +101,13 @@ Click "Create Web Service". Render will automatically:
 
 **Your backend will be available at:**
 ```
-https://skylark-drones-backend.onrender.com
+https://skylark-bi-agent-fpgy.onrender.com
 ```
 
 ### Step 5: Test Backend
 
 ```bash
-curl https://skylark-drones-backend.onrender.com/health
+curl https://skylark-bi-agent-fpgy.onrender.com/health
 
 # Should respond:
 # {"status":"ok","message":"Skylark Drones Backend is running"}
@@ -148,7 +148,7 @@ git push
 In Vercel dashboard, go to Settings → Environment Variables:
 
 ```
-NEXT_PUBLIC_BACKEND_URL=https://skylark-drones-backend.onrender.com
+NEXT_PUBLIC_BACKEND_URL=https://skylark-bi-agent-fpgy.onrender.com
 NEXT_PUBLIC_APP_NAME=Skylark Drones BI Agent
 ```
 
@@ -164,12 +164,12 @@ Vercel will automatically:
 
 **Your frontend will be available at:**
 ```
-https://skylark-drones.vercel.app
+https://skylark-bi-agent-frontend-pi.vercel.app
 ```
 
 ### Step 5: Test Frontend
 
-Open https://skylark-drones.vercel.app in browser. Try asking:
+Open https://skylark-bi-agent-frontend-pi.vercel.app in browser. Try asking:
 ```
 "How is our pipeline?"
 ```
@@ -449,8 +449,8 @@ git push origin main
 ## Summary
 
 You now have:
-- ✅ **Backend on Render**: `https://skylark-drones-backend.onrender.com`
-- ✅ **Frontend on Vercel**: `https://skylark-drones.vercel.app`
+- ✅ **Backend on Render**: `https://skylark-bi-agent-fpgy.onrender.com`
+- ✅ **Frontend on Vercel**: `https://skylark-bi-agent-frontend-pi.vercel.app`
 - ✅ **Automatic deployments**: Push to GitHub → auto deploy
 - ✅ **Production ready**: Both services production-grade
 - ✅ **Isolated concerns**: Frontend and backend separate

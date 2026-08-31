@@ -12,7 +12,7 @@ Express.js backend service for Skylark Drones AI Business Intelligence Agent.
 - REST API for frontend
 
 **Deployment**: Render.com
-**URL**: https://skylark-drones-backend.onrender.com
+**URL**: https://skylark-bi-agent-fpgy.onrender.com
 
 ---
 
@@ -79,9 +79,12 @@ POST /api/query
 **Request:**
 ```json
 {
-  "query": "How is our pipeline?"
+  "query": "How is our pipeline?",
+  "history": []
 }
 ```
+
+`history` is optional: an array of prior `{ role: "user" | "assistant", content: string }` turns (oldest first, current `query` NOT included), capped at 10 entries server-side. Pass the running conversation here so the agent can resolve follow-ups ("what about just Energy?") and understand answers to its own clarifying questions.
 
 **Response:**
 ```json
@@ -192,6 +195,8 @@ Groq LLM with function calling.
 - `get_customer_analysis()` - Customer insights
 - `get_top_deals()` - Largest opportunities
 - `get_data_quality_report()` - Data issues
+- `get_revenue_overview()` - Estimated revenue (completed work orders x avg Won-deal value; always flagged as an estimate)
+- `generate_leadership_update()` - One-call structured executive summary (pipeline, revenue, ops, top sectors, risks, data quality)
 
 **Process:**
 1. Receives natural language query
@@ -329,7 +334,7 @@ NODE_ENV=development
    - More concise tool descriptions
 
 4. **Use cheaper LLM**
-   - Mixtral-8x7b (current) - fast, accurate
+   - openai/gpt-oss-20b (current) - fast, accurate
    - Could use GPT-4 mini for complex queries
 
 ---
@@ -354,7 +359,7 @@ git push origin main
 
 **Your backend URL:**
 ```
-https://skylark-drones-backend.onrender.com
+https://skylark-bi-agent-fpgy.onrender.com
 ```
 
 ### Local Deployment
@@ -540,6 +545,8 @@ May indicate:
 | `get_customer_analysis` | Customer data | Account insight |
 | `get_top_deals` | Top opportunities | Deal focus |
 | `get_data_quality_report` | Data issues | Quality check |
+| `get_revenue_overview` | Estimated revenue | Revenue questions |
+| `generate_leadership_update` | Structured exec summary | Leadership updates |
 
 ---
 

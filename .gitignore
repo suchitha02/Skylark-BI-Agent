@@ -17,6 +17,7 @@ out/
 dist/
 build/
 *.tsbuildinfo
+next-env.d.ts
 
 # IDE
 .vscode/

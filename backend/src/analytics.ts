@@ -60,24 +60,36 @@ export class Analytics {
   }
 
   /**
-   * Calculate revenue metrics (where available)
+   * Calculate revenue metrics (estimated — the dataset has no ground-truth
+   * revenue field on either board).
+   *
+   * Method: average value of "Won" deals (falling back to all valid deals if
+   * there are no Won deals) is used as a per-project revenue estimate,
+   * multiplied by the number of completed work orders. This ties the two
+   * boards together deterministically instead of a hardcoded number, but it
+   * is still an estimate and is flagged as such via `isEstimated`.
    */
   static calculateRevenue(
     deals: Deal[],
     workOrders: WorkOrder[]
   ): RevenueMetrics {
-    // In a real system, revenue would come from closed/completed deals
-    // For now, we'll count completed work orders as proxy for revenue
     const completedOrders = workOrders.filter(wo => wo.status === 'Completed');
+
+    const wonDeals = deals.filter(d => d.value > 0 && d.stage === 'Won');
+    const validDeals = deals.filter(d => d.value > 0);
+    const basisDeals = wonDeals.length > 0 ? wonDeals : validDeals;
+
+    const avgDealValueUsed =
+      basisDeals.length > 0
+        ? basisDeals.reduce((sum, d) => sum + d.value, 0) / basisDeals.length
+        : 0;
 
     const byCustomer: Record<string, number> = {};
     const bySector: Record<string, number> = {};
     let totalRevenue = 0;
 
-    // Simple proxy: assume each completed work order represents revenue
-    // In production, this would come from actual revenue field
     completedOrders.forEach(wo => {
-      const revenue = 100000; // Placeholder: would come from deal value
+      const revenue = avgDealValueUsed;
 
       totalRevenue += revenue;
 
@@ -97,6 +109,8 @@ export class Analytics {
       byCustomer,
       bySector,
       completedProjects: completedOrders.length,
+      isEstimated: true,
+      avgDealValueUsed,
     };
   }
 

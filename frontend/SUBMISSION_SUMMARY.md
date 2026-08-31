@@ -250,7 +250,7 @@ Output: Executive-level answer with:
 | Styling | Tailwind CSS | Rapid professional UI |
 | Language | TypeScript | Type safety, fewer bugs |
 | Backend | Next.js API Routes | No separate server, simpler deploy |
-| LLM | Groq (Mixtral-8x7b) | Fast inference, function calling |
+| LLM | Groq (openai/gpt-oss-20b) | Fast inference, function calling |
 | Deployment | Vercel | One-click Next.js deployment |
 | HTTP Client | Axios | Simple, reliable API calls |
 

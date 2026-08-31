@@ -56,18 +56,18 @@ Wait 2-5 minutes for deployment.
 
 ### Step 6: Update API Endpoint
 
-After deployment, Vercel shows your URL (e.g., `https://skylark-drones.vercel.app`)
+After deployment, Vercel shows your URL (e.g., `https://skylark-bi-agent-frontend-pi.vercel.app`)
 
 1. Go to Vercel dashboard → Your project → Settings → Environment Variables
 2. Edit `NEXT_PUBLIC_API_ENDPOINT`:
    ```
-   https://skylark-drones.vercel.app/api
+   https://skylark-bi-agent-frontend-pi.vercel.app/api
    ```
 3. Redeploy (click "Redeploy" button)
 
 ### ✅ Done!
 
-Your app is live at: `https://skylark-drones.vercel.app`
+Your app is live at: `https://skylark-bi-agent-frontend-pi.vercel.app`
 
 ---
 
@@ -128,18 +128,18 @@ Wait 3-5 minutes for deployment (Render is slower than Vercel).
 
 ### Step 7: Update API Endpoint
 
-After deployment, Render shows your URL (e.g., `https://skylark-drones.onrender.com`)
+After deployment, Render shows your URL (e.g., `https://skylark-bi-agent-fpgy.onrender.com`)
 
 1. Go to Render dashboard → Your service → Environment
 2. Edit `NEXT_PUBLIC_API_ENDPOINT`:
    ```
-   https://skylark-drones.onrender.com/api
+   https://skylark-bi-agent-fpgy.onrender.com/api
    ```
 3. Redeploy (Render auto-redeploys on env var changes)
 
 ### ✅ Done!
 
-Your app is live at: `https://skylark-drones.onrender.com`
+Your app is live at: `https://skylark-bi-agent-fpgy.onrender.com`
 
 ---
 
@@ -162,14 +162,14 @@ Your app is live at: `https://skylark-drones.onrender.com`
 
 ### Test Vercel
 ```
-https://skylark-drones.vercel.app
+https://skylark-bi-agent-frontend-pi.vercel.app
 
 Ask: "How is our pipeline?"
 ```
 
 ### Test Render
 ```
-https://skylark-drones.onrender.com
+https://skylark-bi-agent-fpgy.onrender.com
 
 Ask: "How is our pipeline?"
 ```
@@ -259,8 +259,8 @@ git push origin main
 After successful deployment, you'll have:
 
 ```
-Vercel:  https://skylark-drones.vercel.app
-Render:  https://skylark-drones.onrender.com
+Vercel:  https://skylark-bi-agent-frontend-pi.vercel.app
+Render:  https://skylark-bi-agent-fpgy.onrender.com
 ```
 
 Both run the exact same code. Share the **Vercel URL** with recruiters (it's faster).

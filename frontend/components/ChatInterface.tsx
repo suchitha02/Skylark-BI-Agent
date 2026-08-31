@@ -38,6 +38,13 @@ export default function ChatInterface() {
     setError(null);
     setLoading(true);
 
+    // Prior turns, sent to the backend so the agent has conversation context
+    // (needed for follow-ups and for the user to answer a clarifying
+    // question the agent asked last turn). Capped to the last 10 messages.
+    const history = messages
+      .map(m => ({ role: m.role, content: m.content }))
+      .slice(-10);
+
     // Add user message to chat
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
 
@@ -46,7 +53,7 @@ export default function ChatInterface() {
       const response = await fetch(`${apiUrl}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: userMessage }),
+        body: JSON.stringify({ query: userMessage, history }),
       });
 
       if (!response.ok) {

@@ -6,8 +6,8 @@ This is a **production-ready, fully deployed AI Business Intelligence Agent** fo
 
 ### ✅ Deployed Services
 
-- **Frontend**: https://skylark-drones.vercel.app (on Vercel)
-- **Backend**: https://skylark-drones-backend.onrender.com (on Render)
+- **Frontend**: https://skylark-bi-agent-frontend-pi.vercel.app (on Vercel)
+- **Backend**: https://skylark-bi-agent-fpgy.onrender.com (on Render)
 
 **Ready to use immediately. No local setup required for recruiters.**
 
@@ -117,14 +117,14 @@ User Question
 
 ### ✅ Frontend (Vercel)
 
-- **URL**: https://skylark-drones.vercel.app
+- **URL**: https://skylark-bi-agent-frontend-pi.vercel.app
 - **Status**: ✅ Deployed
 - **Auto-deploys**: On git push to `main`
 - **Env**: `NEXT_PUBLIC_BACKEND_URL`
 
 ### ✅ Backend (Render)
 
-- **URL**: https://skylark-drones-backend.onrender.com
+- **URL**: https://skylark-bi-agent-fpgy.onrender.com
 - **Status**: ✅ Deployed
 - **Auto-deploys**: On git push to `main`
 - **Env**: `MONDAY_API_KEY`, `GROQ_API_KEY`, `WORK_ORDERS_BOARD_ID`, `DEALS_BOARD_ID`
@@ -217,6 +217,8 @@ Open http://localhost:3000 and try:
 - Sector performance analysis
 - Customer analysis (value + execution)
 - Cross-board intelligence
+- Estimated revenue (completed work orders x avg Won-deal value — no ground-truth revenue field exists in the data, so this is always presented as an estimate)
+- On-demand leadership updates (`generate_leadership_update`): pipeline, revenue, ops, top sectors, risks, and data quality in one structured summary
 
 ### ✅ Professional UI
 - Modern chat interface
@@ -294,7 +296,7 @@ Open http://localhost:3000 and try:
 ## 🧪 Testing
 
 ### Manual Testing
-1. Open https://skylark-drones.vercel.app
+1. Open https://skylark-bi-agent-frontend-pi.vercel.app
 2. Ask: "How is our pipeline?"
 3. Should see response in 2-5 seconds
 4. Try: "What are the biggest risks?"
@@ -337,7 +339,7 @@ cd frontend && npm run dev
 ## 🚀 Next Steps
 
 ### For Immediate Demo
-1. Open https://skylark-drones.vercel.app
+1. Open https://skylark-bi-agent-frontend-pi.vercel.app
 2. Ask business questions
 3. Share link with recruiters
 
@@ -503,5 +505,5 @@ You have a **production-grade AI Business Intelligence Agent** that:
 
 **Deployed**: August 31, 2026
 **Status**: ✅ Production Ready
-**Frontend**: https://skylark-drones.vercel.app
-**Backend**: https://skylark-drones-backend.onrender.com
+**Frontend**: https://skylark-bi-agent-frontend-pi.vercel.app
+**Backend**: https://skylark-bi-agent-fpgy.onrender.com

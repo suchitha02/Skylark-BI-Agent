@@ -1,4 +1,6 @@
-# Skylark Drones BI Agent — Decision Log
+# Skylark Drones BI Agent — Decision Log (Extended)
+
+> **Note**: The canonical, 2-page decision log required by the assignment is at the repo root: `/DECISION_LOG.md`. This file is a longer, more detailed version kept for reference; it has been corrected below to match what was actually shipped (an earlier draft of this file described a monorepo architecture that isn't the one deployed).
 
 ## Executive Summary
 Built an AI-powered business intelligence agent that answers founder-level questions about pipeline, operations, and sector performance by integrating with Monday.com boards and reasoning over normalized data with Groq LLM.
@@ -7,22 +9,23 @@ Built an AI-powered business intelligence agent that answers founder-level quest
 
 ## Key Decisions
 
-### 1. Tech Stack: Next.js Full-Stack (Not Separate Backend)
+### 1. Tech Stack: Separate Express Backend + Next.js Frontend
 
-**Decision**: Single Next.js repository with API routes, not separate frontend/backend services
+**Decision**: Separate Express/Node backend (deployed to Render) and Next.js chat frontend (deployed to Vercel), communicating over a REST API — **not** a single Next.js monorepo with API routes.
+
+*(Correction: an earlier draft of this section described a single-Next.js-app architecture. That was the original plan but is not what was ultimately built or deployed — the actual deployment target requested was Render for the backend and Vercel for the frontend, so a real separate backend was needed.)*
 
 **Why**:
-- Faster development: One deployment, shared types, unified codebase
-- Simpler for recruiting demo: No Docker, no multiple services to explain
-- API routes handle Monday.com queries securely (server-side only)
-- Built-in TypeScript + Tailwind = fast iteration
-- Vercel deployment is one-click for Next.js projects
+- Matches the two deployment targets required (Render for backend, Vercel for frontend)
+- Clear separation of concerns: backend owns Monday.com/Groq credentials and all business logic, frontend is a thin chat client
+- Backend can be iterated on, redeployed, and debugged independently of the frontend
+- TypeScript throughout (backend `.ts` run via `tsx`, frontend via Next.js's built-in support)
 
-**Considered**: FastAPI + React alternative
-- Would be more "traditional" but adds deploy complexity
-- Decided speed of implementation was more valuable than architecture prestige
+**Considered**: Single Next.js app with API routes
+- Simpler single-deploy story, but doesn't match "Render for backend, Vercel for frontend"
+- Decided to match the requested infrastructure split over minimizing deploy count
 
-**Trade-off**: Less horizontally scalable than microservices, but sufficient for prototype/demo
+**Trade-off**: Two services to deploy, configure (CORS, env vars) and keep in sync, vs. one — but this is what "separate frontend/backend on separate platforms" requires.
 
 ---
 
@@ -115,50 +118,45 @@ Built an AI-powered business intelligence agent that answers founder-level quest
 
 ---
 
-### 6. Revenue Metrics: Work Order Completion as Proxy
+### 6. Revenue Metrics: Work Order Completion x Avg Won-Deal Value
 
-**Decision**: No actual revenue field in dataset; using completed work orders as revenue proxy
+**Decision**: No actual revenue field in dataset; estimate revenue from completed work orders, valued at the average of "Won" deals, and expose it to the agent as a real tool (`get_revenue_overview`).
 
 **Why**:
-- Dataset has pipeline (Deals) and operations (Work Orders) but no revenue per se
-- Completed work orders represent actual delivered value
-- Could ask for revenue field, but made judgment call to work with available data
+- Dataset has pipeline (Deals) and operations (Work Orders) but no revenue field
+- Completed work orders represent delivered value; average Won-deal value is the closest real, data-derived stand-in for "what a typical delivered project is worth" (chosen over a hardcoded placeholder number)
+- Exposed as a first-class tool so the agent can actually answer revenue questions instead of having no data to reach for
 
-**Implementation**:
+**Implementation** (`Analytics.calculateRevenue`):
 ```
-total_revenue = count(completed_work_orders) * average_project_value
-by_sector = group completed_orders by sector
+basis = deals where stage == 'Won' (fallback: all deals with value > 0, if no Won deals exist)
+avg_deal_value = mean(basis.value)
+total_revenue = count(completed_work_orders) * avg_deal_value
+by_sector / by_customer = group completed_orders by sector/customer, valued at avg_deal_value
 ```
 
-**Limitation**: Revenue is estimated (not real revenue data)
-**Noted**: In README and data quality report
+**Limitation**: Still an estimate, not real revenue data — every tool response and the `RevenueMetrics.isEstimated` flag say so explicitly, and the agent's system prompt is instructed to always caveat revenue figures as estimates.
 
-**Future Improvement**: Add actual revenue field to Deals board when available
+**Future Improvement**: Add an actual revenue/invoice field to either board when available, and drop the proxy entirely.
 
 ---
 
 ### 7. Leadership Update Feature: Interpretation
 
-**Decision**: Leadership update = Structured weekly summary, not automated report
+**Decision**: Leadership update = an on-demand, structured summary generated by a dedicated deterministic tool, not a scheduled/automated report.
 
 **How Implemented**:
-- Agent can generate updates on-demand via natural language query
-- User asks "Give me a leadership update" or "Prepare this week's summary"
-- Agent returns structured output with:
-  - Executive summary (2-3 sentences of business health)
-  - Key metrics (pipeline, revenue, operations)
-  - Top performing sectors
-  - Risks to monitor
-  - Data quality notes
-  - Recommended focus
+- A single tool, `generate_leadership_update`, composes pipeline totals, estimated revenue, operational health, top 3 sectors, concentration/delay risk flags, and data-quality notes into one structured block
+- The agent's system prompt instructs it to call this tool (instead of chaining several individual tools itself) whenever the user asks for a "leadership update," "executive summary," or "status update"
+- Built as one deterministic function rather than leaving the orchestration entirely to the LLM, so the output shape is consistent every time
 
-**Why Not Automated**:
-- Timing context matters ("this week" vs "this month")
-- Would need predictive analytics for "what's changed"
-- Better to let founder decide when/what to report
+**Why Not Automated/Scheduled**:
+- Timing context matters ("this week" vs "this month") and the data has no reliable timestamp to diff against
+- Would need historical snapshots to say "what's changed since last time," which is out of scope
+- Better to let the founder pull an update on demand
 
 **Trade-off**: Manual query vs scheduled report
-**Payoff**: More flexible, founder controls timing
+**Payoff**: More flexible, founder controls timing, and the response shape is deterministic rather than depending on the LLM correctly chaining 5 tool calls on its own
 
 ---
 
@@ -205,12 +203,12 @@ by_sector = group completed_orders by sector
 
 ### 10. Groq LLM: Why Not Claude?
 
-**Decision**: Groq API (Mixtral-8x7b) instead of Claude
+**Decision**: Groq API (openai/gpt-oss-20b) instead of Claude
 
 **Why**:
 - User provided Groq key, so preferred that path
 - Groq is extremely fast (500+ tokens/sec)
-- Mixtral is capable for business reasoning
+- GPT-OSS-20B (via Groq) is capable for business reasoning
 - Function calling support is excellent
 - Clear performance advantage for real-time agent
 
